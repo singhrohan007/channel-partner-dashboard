@@ -1,0 +1,221 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Channel Partner Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+
+  <!-- Header -->
+  <header class="text-white px-6 py-4 flex justify-between items-center" style="background-color: #e34848;">
+    <div class="text-xl font-bold">
+      <span class="text-white">apna</span><span class="text-yellow-400">advantage</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <div class="text-right">
+        <div class="font-semibold">{{ request.user.username }}</div>
+        <div class="text-sm text-gray-200">{{ request.user.email }}</div>
+      </div>
+      <a href="{% url 'logout' %}" class="bg-white text-purple-800 px-4 py-2 rounded-md font-medium">Logout</a>
+    </div>
+  </header>
+
+  <!-- Main Dashboard -->
+  <main class="p-6">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold">Channel Partner Dashboard</h1>
+      <button onclick="toggleModal(true)" class="bg-[#F76341] hover:bg-[#E6522C] text-white px-4 py-2 rounded-md font-semibold">
+        + Add New Lead
+      </button>
+    </div>
+
+    <!-- Lead Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div class="bg-white p-4 rounded shadow">
+        <h2 class="text-lg font-semibold">Total Leads</h2>
+        <p class="text-sm text-gray-500">All leads you've added</p>
+        <div class="text-3xl font-bold mt-2">{{ leads|length }}</div>
+      </div>
+      <div class="bg-white p-4 rounded shadow">
+        <h2 class="text-lg font-semibold">Primary Leads</h2>
+        <p class="text-sm text-gray-500">Unique leads</p>
+        <div class="text-3xl font-bold mt-2">0</div>
+      </div>
+      <div class="bg-white p-4 rounded shadow">
+        <h2 class="text-lg font-semibold">Secondary Leads</h2>
+        <p class="text-sm text-gray-500">Duplicate leads</p>
+        <div class="text-3xl font-bold mt-2">0</div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="mb-4 flex items-center space-x-2">
+      <button class="tab-btn px-4 py-2 bg-[#F76341] text-white rounded" data-tab="all">All Leads</button>
+      <button class="tab-btn px-4 py-2 bg-gray-200 rounded" data-tab="pending">Pending</button>
+      <button class="tab-btn px-4 py-2 bg-gray-200 rounded" data-tab="pushed">Pushed</button>
+      <button class="tab-btn px-4 py-2 bg-gray-200 rounded" data-tab="college">By College</button>
+
+      <!-- Dropdown -->
+      <select id="college-filter" class="ml-auto hidden px-3 py-2 border rounded">
+        <option value="all">All Colleges</option>
+        {% for lead in leads|dictsort:"college" %}
+          <option value="{{ lead.college|lower|slugify }}">{{ lead.college }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Table -->
+    <div class="overflow-x-auto">
+      <table class="w-full bg-white shadow rounded">
+        <thead class="bg-gray-100 text-left text-sm">
+          <tr>
+            <th class="p-3">Name</th>
+            <th class="p-3">Date Added</th>
+            <th class="p-3">Contact</th>
+            <th class="p-3">College & Course</th>
+            <th class="p-3">Type</th>
+            <th class="p-3">Status</th>
+            <th class="p-3">Action</th>
+          </tr>
+        </thead>
+        <tbody id="lead-table-body">
+            {% for lead in leads %}
+            <tr class="border-t text-sm lead-row" data-status="pending" data-college="{{ lead.college|lower|slugify }}">
+              <td class="p-3">{{ lead.name }}</td>
+              <td class="p-3">{{ lead.created_at|date:"d M Y, h:i A" }}</td>
+              <td class="p-3">{{ lead.email }}<br><span class="text-gray-500">{{ lead.phone }}</span></td>
+              <td class="p-3">{{ lead.college }}<br><span class="text-gray-500">{{ lead.course }}</span></td>
+              <td class="p-3">-</td>
+              <td class="p-3">
+                <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">❗Pushed to admin</span>
+              </td>
+              <td class="p-3">—</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tbody id="no-pushed-msg" class="hidden">
+            <tr>
+              <td colspan="7" class="text-center py-4 text-gray-500">You haven't pushed any leads yet.</td>
+            </tr>
+          </tbody>
+          
+      </table>
+    </div>
+
+    <!-- Push Status -->
+    <div class="mt-6 bg-white p-4 rounded shadow">
+      <h2 class="font-bold mb-2">Push Status</h2>
+      <div class="flex justify-between">
+        <p>Primary leads created:</p>
+        <strong>0</strong>
+      </div>
+      <div class="flex justify-between">
+        <p>Secondary leads (duplicates):</p>
+        <strong>0</strong>
+      </div>
+      <div class="flex justify-between">
+        <p>Leads pushed to college:</p>
+        <strong>0</strong>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="text-center text-gray-500 text-sm py-6">
+    © 2025 Channel Partner Portal. All rights reserved.
+  </footer>
+
+  <!-- Modal -->
+  <div id="modal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center hidden">
+    <div class="bg-white w-full max-w-2xl p-6 rounded shadow-lg relative overflow-y-auto max-h-[90vh]">
+      <button onclick="toggleModal(false)" class="absolute top-2 right-4 text-xl">×</button>
+      <h2 class="text-xl font-bold mb-2">Add New Lead</h2>
+      <p class="text-gray-500 mb-4">Enter the details of the potential student lead below.</p>
+      <form method="POST" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {% csrf_token %}
+        <div>
+          <label class="text-sm">Full Name</label>
+          <input name="name" type="text" placeholder="John Doe" class="w-full border p-2 rounded mt-1" required />
+        </div>
+        <div>
+          <label class="text-sm">Phone Number</label>
+          <input name="phone" type="text" placeholder="1234567890" class="w-full border p-2 rounded mt-1" required />
+        </div>
+        <div>
+          <label class="text-sm">Email *</label>
+          <input name="email" type="email" placeholder="email@example.com" class="w-full border p-2 rounded mt-1" required />
+        </div>
+        <div>
+          <label class="text-sm">Course *</label>
+          <select name="course" class="w-full border p-2 rounded mt-1" required>
+            <option value="" disabled selected>Select course</option>
+            <option value="MBA">MBA</option>
+            <option value="BBA">BBA</option>
+            <option value="B.Tech">B.Tech</option>
+            <option value="M.Tech">M.Tech</option>
+            <option value="B.Com">B.Com</option>
+            <option value="MCA">MCA</option>
+            <option value="BCA">BCA</option>
+            <option value="BA">BA</option>
+            <option value="MA">MA</option>
+          </select>
+        </div>
+        <div class="md:col-span-2">
+          <label class="text-sm">College *</label>
+          <input name="college" type="text" placeholder="Search college..." class="w-full border p-2 rounded mt-1" required />
+        </div>
+        <div class="md:col-span-2 text-right">
+          <button class="bg-blue-600 text-white px-4 py-2 rounded mt-4">Submit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script>
+    function toggleModal(show) {
+      document.getElementById("modal").classList.toggle("hidden", !show);
+    }
+
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const rows = document.querySelectorAll('.lead-row');
+    const collegeFilter = document.getElementById('college-filter');
+
+    tabButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = btn.getAttribute('data-tab');
+
+        tabButtons.forEach(b => {
+          b.classList.remove('bg-[#F76341]', 'text-white');
+          b.classList.add('bg-gray-200');
+        });
+        btn.classList.remove('bg-gray-200');
+        btn.classList.add('bg-[#F76341]', 'text-white');
+
+        if (tab === 'college') {
+          collegeFilter.classList.remove('hidden');
+        } else {
+          collegeFilter.classList.add('hidden');
+        }
+
+        rows.forEach(row => {
+          const status = row.getAttribute('data-status');
+          row.style.display = (tab === 'all' || status === tab || tab === 'college') ? '' : 'none';
+        });
+      });
+    });
+
+    collegeFilter.addEventListener('change', () => {
+      const selected = collegeFilter.value;
+      rows.forEach(row => {
+        const college = row.getAttribute('data-college');
+        row.style.display = (selected === 'all' || college === selected) ? '' : 'none';
+      });
+    });
+  </script>
+
+</body>
+</html>
