@@ -1,18 +1,20 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Channel Partner Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
+
 <body class="bg-gray-100 font-sans">
 
   <!-- Header -->
   <header class="text-white px-6 py-4 flex justify-between items-center" style="background-color: #e34848;">
     <div class="text-xl font-bold">
-      <span class="text-white">apna</span><span class="text-yellow-400">advantage</span>
+      <span class="text-white">skill</span><span class="text-yellow-400">road</span>
     </div>
     <div class="flex items-center gap-4">
       <div class="text-right">
@@ -27,7 +29,8 @@
   <main class="p-6">
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-2xl font-bold">Channel Partner Dashboard</h1>
-      <button onclick="toggleModal(true)" class="bg-[#F76341] hover:bg-[#E6522C] text-white px-4 py-2 rounded-md font-semibold">
+      <button onclick="toggleModal(true)"
+        class="bg-[#F76341] hover:bg-[#E6522C] text-white px-4 py-2 rounded-md font-semibold">
         + Add New Lead
       </button>
     </div>
@@ -61,9 +64,13 @@
       <!-- Dropdown -->
       <select id="college-filter" class="ml-auto hidden px-3 py-2 border rounded">
         <option value="all">All Colleges</option>
-        {% for lead in leads|dictsort:"college" %}
-          <option value="{{ lead.college|lower|slugify }}">{{ lead.college }}</option>
+      {% with leads|dictsort:"college" as sorted_leads %}
+        {% for lead in sorted_leads %}
+          {% ifchanged lead.college %}
+            <option value="{{ lead.college|lower|slugify }}">{{ lead.college }}</option>
+          {% endifchanged %}
         {% endfor %}
+      {% endwith %}
       </select>
     </div>
 
@@ -82,26 +89,35 @@
           </tr>
         </thead>
         <tbody id="lead-table-body">
-            {% for lead in leads %}
-            <tr class="border-t text-sm lead-row" data-status="pending" data-college="{{ lead.college|lower|slugify }}">
-              <td class="p-3">{{ lead.name }}</td>
-              <td class="p-3">{{ lead.created_at|date:"d M Y, h:i A" }}</td>
-              <td class="p-3">{{ lead.email }}<br><span class="text-gray-500">{{ lead.phone }}</span></td>
-              <td class="p-3">{{ lead.college }}<br><span class="text-gray-500">{{ lead.course }}</span></td>
-              <td class="p-3">-</td>
-              <td class="p-3">
-                <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">❗Pushed to admin</span>
-              </td>
-              <td class="p-3">—</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-          <tbody id="no-pushed-msg" class="hidden">
-            <tr>
-              <td colspan="7" class="text-center py-4 text-gray-500">You haven't pushed any leads yet.</td>
-            </tr>
-          </tbody>
-          
+          {% for lead in leads %}
+          <tr class="border-t text-sm lead-row" data-status="{{lead.status}}"
+            data-college="{{ lead.college|lower|slugify }}">
+            <td class="p-3">{{ lead.name }}</td>
+            <td class="p-3">{{ lead.created_at|date:"d M Y, h:i A" }}</td>
+            <td class="p-3">{{ lead.email }}<br><span class="text-gray-500">{{ lead.phone }}</span></td>
+            <td class="p-3">{{ lead.college }}<br><span class="text-gray-500">{{ lead.course }}</span></td>
+            <td class="p-3">-</td>
+            <td class="p-3">
+              {% if lead.status == 'pending' %}
+              <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">🕒 Pending</span>
+              {% elif lead.status == 'pushed' %}
+              <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">📤 Pushed</span>
+              {% elif lead.status == 'approved' %}
+              <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">✅ Approved</span>
+              {% else %}
+              <span class="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">❓ Unknown</span>
+              {% endif %}
+            </td>
+            <td class="p-3">—</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tbody id="no-pushed-msg" class="hidden">
+          <tr>
+            <td colspan="7" class="text-center py-4 text-gray-500">You haven't pushed any leads yet.</td>
+          </tr>
+        </tbody>
+
       </table>
     </div>
 
@@ -146,7 +162,8 @@
         </div>
         <div>
           <label class="text-sm">Email *</label>
-          <input name="email" type="email" placeholder="email@example.com" class="w-full border p-2 rounded mt-1" required />
+          <input name="email" type="email" placeholder="email@example.com" class="w-full border p-2 rounded mt-1"
+            required />
         </div>
         <div>
           <label class="text-sm">Course *</label>
@@ -165,7 +182,8 @@
         </div>
         <div class="md:col-span-2">
           <label class="text-sm">College *</label>
-          <input name="college" type="text" placeholder="Search college..." class="w-full border p-2 rounded mt-1" required />
+          <input name="college" type="text" placeholder="Search college..." class="w-full border p-2 rounded mt-1"
+            required />
         </div>
         <div class="md:col-span-2 text-right">
           <button class="bg-blue-600 text-white px-4 py-2 rounded mt-4">Submit</button>
@@ -218,4 +236,5 @@
   </script>
 
 </body>
+
 </html>

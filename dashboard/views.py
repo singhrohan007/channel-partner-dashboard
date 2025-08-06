@@ -3,6 +3,20 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from .models import Lead
+from django.contrib.auth.decorators import user_passes_test
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Lead
+from .forms import LeadForm
+from django.http import JsonResponse
+from django.contrib import messages
+
+def is_admin(user):
+    return user.is_superuser  
+
+def is_superuser(user):
+    return user.is_superuser  
+
+
 
 def signup_view(request):
     if request.method == 'POST':
@@ -39,6 +53,7 @@ def dashboard_view(request):
         phone = request.POST['phone']
         college = request.POST['college']
         course = request.POST['course']
+        
 
         Lead.objects.create(
             user=request.user,
@@ -47,6 +62,7 @@ def dashboard_view(request):
             phone=phone,
             college=college,
             course=course
+            
         )
         return redirect('dashboard')
 
@@ -79,7 +95,7 @@ def dashboard_view(request):
 
     return render(request, 'dashboard/dashboard.html', context)
 
-
+@login_required(login_url='login')
 def dashboard(request):
     tab = request.GET.get('tab', 'pending')  # Default tab is 'pending'
 
@@ -98,3 +114,50 @@ def dashboard(request):
         'leads': leads,
         'tab': tab,
     })
+
+
+
+
+
+@user_passes_test(is_admin)
+def admin_dashboard(request):
+    leads = Lead.objects.all().order_by('-created_at')
+    return render(request, 'dashboard/admin_dashboard.html', {'leads': leads})
+
+
+@user_passes_test(is_superuser)
+def update_lead(request, lead_id):
+    lead = get_object_or_404(Lead, id=lead_id)
+    if request.method == 'POST':
+        form = LeadForm(request.POST, instance=lead)
+        if form.is_valid():
+            form.save()
+            return JsonResponse({'success': True})
+        else:
+            print(form.errors)  # Add this to debug invalid form
+    return JsonResponse({'success': False})
+
+@user_passes_test(is_superuser)
+def delete_lead(request, lead_id):
+    lead = get_object_or_404(Lead, id=lead_id)
+    if request.method == 'POST':
+        lead.delete()
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False})
+
+
+
+def admin_login_view(request):
+    if request.method == 'POST':
+        email = request.POST['email']
+        password = request.POST['password']
+        user = authenticate(request, username=email, password=password)
+
+        if user is not None and user.is_superuser:
+            login(request, user)
+            return redirect('admin_dashboard')
+        else:
+            messages.error(request, 'Invalid credentials or not authorized.')
+            return redirect('admin_login')
+
+    return render(request, 'dashboard/admin_login.html')
